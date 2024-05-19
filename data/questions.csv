@@ -1,0 +1,6 @@
+id,question_type,question,answers
+1,Quiz Question,What can be created while programming?,"['Games', 'Apps', 'Websites', 'All of these']"
+2,Open Question,The first planet in the Solar System is?,['Mercury']
+3,Open Question,What is the primary programming language used for developing iOS apps?,['Swift']
+4,Open Question,What is the chemical symbol for water?,['H2O']
+5,Quiz Question,Which programming language is primarily used for web development?,"['Java', 'Python', 'Javascript', 'Go']"

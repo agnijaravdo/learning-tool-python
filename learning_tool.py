@@ -1,6 +1,8 @@
 from enum import Enum
 from typing import Iterable
 from simple_term_menu import TerminalMenu
+import csv
+import os
 
 
 class QuestionType(Enum):
@@ -45,7 +47,7 @@ class Question:
     @question.setter
     def question(self, question):
         if not isinstance(question, str):
-            raise ValueError("Question must be a string.")
+            raise ValueError("Question must be a string")
         self._question = question
 
     @property
@@ -55,9 +57,9 @@ class Question:
     @answers.setter
     def answers(self, answers: Iterable[str]):
         if not isinstance(answers, (list, tuple)):
-            raise ValueError("Answers must be a list or a tuple.")
+            raise ValueError("Answers must be a list or a tuple")
         if self.question_type == QuestionType.QUIZ and len(answers) < 2:
-            raise ValueError("For quiz questions, there must be at least 2 answers.")
+            raise ValueError("For quiz questions, there must be at least 2 answers")
         self._answers = answers
 
 
@@ -92,12 +94,13 @@ def show_select_question_type_menu():
 
 
 def add_question(question_type):
+    questions = []
     while True:
-        question = input(
-            f"Enter {question_type.value} (type 'exit' to go back to the questions menu ↵): "
+        user_question = input(
+            f"Enter {question_type.value} (type 'exit' to save your question and go back to the questions menu ↵): "
         )
-        if question.strip().lower() == "exit":
-            return
+        if user_question.strip().lower() == "exit":
+            break
 
         answers = []
         if question_type == QuestionType.QUIZ:
@@ -116,8 +119,40 @@ def add_question(question_type):
             open_question_answer = input("Enter the answer: ")
             answers.append(open_question_answer)
 
-        question = Question(question_type, question, answers)
-        print(question)
+        question = Question(question_type, user_question, answers)
+        questions.append(question)
+    write_questions_to_file(questions)
+
+
+def write_questions_to_file(questions):
+    file_path = "data/questions.csv"
+    is_file_exists = os.path.isfile(file_path)
+
+    max_id = 0
+    if is_file_exists:
+        with open(file_path, "r") as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                row_id = int(row["id"])
+                if row_id > max_id:
+                    max_id = row_id
+
+    with open(file_path, "a") as file:
+        header = ["id", "question_type", "question", "answers"]
+        writer = csv.DictWriter(file, fieldnames=header)
+
+        if not is_file_exists:
+            writer.writeheader()
+
+        for i, question in enumerate(questions, start=1):
+            writer.writerow(
+                {
+                    "id": max_id + i,
+                    "question_type": question.question_type.value,
+                    "question": question.question,
+                    "answers": question.answers,
+                }
+            )
 
 
 def main():
