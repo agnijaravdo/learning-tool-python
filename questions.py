@@ -14,14 +14,20 @@ class Question:
     QUESTIONS_DATA_PATH = "data/questions.csv"
 
     def __init__(
-        self, question_type: QuestionType, question: str, answers: Iterable[str]
+        self,
+        question_type: QuestionType,
+        question: str,
+        answers: Iterable[str],
+        is_active: bool = True,
+        times_shown: int = 0,
+        correct_answers: int = 0,
     ):
         self.question_type = question_type
         self.question = question
         self.answers = answers
-
-    def __str__(self):
-        return f"{self.question_type.value}: '{self.question}' with answer(s) {self.answers}"
+        self.is_active = is_active
+        self.times_shown = times_shown
+        self.correct_answers = correct_answers
 
     @property
     def question_type(self):
@@ -32,16 +38,6 @@ class Question:
         if not isinstance(question_type, QuestionType):
             raise ValueError("Question type must be an instance of QuestionType")
         self._question_type = question_type
-
-    @property
-    def question(self):
-        return self._question
-
-    @question.setter
-    def question(self, question):
-        if not isinstance(question, str):
-            raise ValueError("Question must be a string")
-        self._question = question
 
     @property
     def answers(self):
@@ -102,7 +98,15 @@ class Question:
                         max_id = row_id
 
         with open(Question.QUESTIONS_DATA_PATH, "a") as file:
-            header = ["id", "question_type", "question", "answers"]
+            header = [
+                "id",
+                "question_type",
+                "question",
+                "answers",
+                "is_active",
+                "times_shown",
+                "correct_answers",
+            ]
             writer = csv.DictWriter(file, fieldnames=header)
 
             if not is_file_exists:
@@ -115,5 +119,36 @@ class Question:
                         "question_type": question.question_type.value,
                         "question": question.question,
                         "answers": question.answers,
+                        "is_active": question.is_active,
+                        "times_shown": question.times_shown,
+                        "correct_answers": question.correct_answers,
                     }
                 )
+
+    @staticmethod
+    def get_number_of_questions():
+        with open(Question.QUESTIONS_DATA_PATH, "r") as file:
+            reader = csv.reader(file)
+            next(reader)
+            questions_count = 0
+            for _ in reader:
+                questions_count += 1
+        return questions_count
+
+    @staticmethod
+    def get_all_questions():
+        questions = []
+        with open(Question.QUESTIONS_DATA_PATH, "r") as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                question = Question(
+                    question_type=QuestionType(row["question_type"]),
+                    question=row["question"],
+                    answers=eval(row["answers"]),
+                    is_active=row["is_active"],
+                    times_shown=int(row["times_shown"]),
+                    correct_answers=int(row["correct_answers"]),
+                )
+                question.id = int(row["id"])
+                questions.append(question)
+        return questions

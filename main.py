@@ -1,7 +1,7 @@
 from enum import Enum
 from simple_term_menu import TerminalMenu
+from tabulate import tabulate
 from questions import Question, QuestionType
-import csv
 import os
 
 
@@ -30,7 +30,7 @@ def show_starting_menu():
         if selected_mode == StartMenuItem.VIEW_STATISTICS:
             show_statistics()
         elif selected_mode == StartMenuItem.PRACTICE_MODE:
-            questions_count = get_number_of_questions()
+            questions_count = Question.get_number_of_questions()
             if questions_count < 5:
                 print(
                     f"\n❗ To select '{StartMenuItem.PRACTICE_MODE.value}' you need to have minimum of 5 questions. Current count of questions is {questions_count}"
@@ -38,7 +38,7 @@ def show_starting_menu():
             else:
                 print("opening practice mode")
         elif selected_mode == StartMenuItem.TEST_MODE:
-            questions_count = get_number_of_questions()
+            questions_count = Question.get_number_of_questions()
             if questions_count < 5:
                 print(
                     f"\n❗ To select '{StartMenuItem.TEST_MODE.value}' you need to have minimum of 5 questions. Current count of questions is {questions_count}"
@@ -69,17 +69,38 @@ def clear_screen():
 
 
 def show_statistics():
-    print("show statistics")
+    questions = Question.get_all_questions()
 
+    table = []
+    for question in questions:
+        row = [
+            question.id,
+            question.question_type.value,
+            question.question,
+            ", ".join(map(str, question.answers)),
+            question.is_active,
+            question.times_shown,
+            question.correct_answers,
+        ]
+        table.append(row)
 
-def get_number_of_questions():
-    with open("data/questions.csv", "r") as file:
-        reader = csv.reader(file)
-        next(reader)
-        questions_count = 0
-        for _ in reader:
-            questions_count += 1
-    return questions_count
+    headers = [
+        "ID",
+        "Type",
+        "Question",
+        "Answers",
+        "Is Active",
+        "Times Shown",
+        "Correct Answers",
+    ]
+    print(
+        tabulate(
+            table,
+            headers=headers,
+            tablefmt="grid",
+            maxcolwidths=[None, None, 80, 60, None, None, None],
+        )
+    )
 
 
 def main():
