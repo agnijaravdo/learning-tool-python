@@ -126,16 +126,6 @@ class Question:
                 )
 
     @staticmethod
-    def get_number_of_questions():
-        with open(Question.QUESTIONS_DATA_PATH, "r") as file:
-            reader = csv.reader(file)
-            next(reader)
-            questions_count = 0
-            for _ in reader:
-                questions_count += 1
-        return questions_count
-
-    @staticmethod
     def get_all_questions():
         questions = []
         with open(Question.QUESTIONS_DATA_PATH, "r") as file:
@@ -152,3 +142,46 @@ class Question:
                 question.id = int(row["id"])
                 questions.append(question)
         return questions
+
+    @staticmethod
+    def get_number_of_questions():
+        questions = Question.get_all_questions()
+        questions_count = len(questions)
+        return questions_count
+
+    @staticmethod
+    def get_question_by_id(question_id):
+        with open(Question.QUESTIONS_DATA_PATH, "r") as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                if row["id"] == str(question_id):
+                    return Question(
+                        question_type=QuestionType(row["question_type"]),
+                        question=row["question"],
+                        answers=eval(row["answers"]),
+                        is_active=row["is_active"],
+                        times_shown=int(row["times_shown"]),
+                        correct_answers=int(row["correct_answers"]),
+                    )
+
+    @staticmethod
+    def update_enablement_status(enablement_status, question_id):
+        temp_rows = []
+
+        with open(Question.QUESTIONS_DATA_PATH, "r") as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                temp_rows.append(row)
+
+        for row in temp_rows:
+            if int(row["id"]) == int(question_id):
+                row["is_active"] = "False" if enablement_status else "True"
+
+        with open(Question.QUESTIONS_DATA_PATH, "w") as file:
+            writer = csv.DictWriter(file, fieldnames=temp_rows[0].keys())
+            writer.writeheader()
+            writer.writerows(temp_rows)
+
+        print(
+            f"Question with id {question_id} has been successfully {'disabled' if enablement_status else 'enabled'}"
+        )

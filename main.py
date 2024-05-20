@@ -1,3 +1,4 @@
+import csv
 from enum import Enum
 from simple_term_menu import TerminalMenu
 from tabulate import tabulate
@@ -29,6 +30,8 @@ def show_starting_menu():
             show_select_question_type_menu()
         if selected_mode == StartMenuItem.VIEW_STATISTICS:
             show_statistics()
+        if selected_mode == StartMenuItem.DISABLE_ENABLE_QUESTIONS:
+            show_question_enablement_menu()
         elif selected_mode == StartMenuItem.PRACTICE_MODE:
             questions_count = Question.get_number_of_questions()
             if questions_count < 5:
@@ -101,6 +104,34 @@ def show_statistics():
             maxcolwidths=[None, None, 80, 60, None, None, None],
         )
     )
+
+
+def show_question_enablement_menu():
+    question_id = input("Type question id to change its enablement: ")
+    question = Question.get_question_by_id(question_id)
+    is_enabled = question.is_active.lower() == "true"
+    enablement_status_to_change = "DISABLED" if is_enabled else "ENABLED"
+    print(
+        f"Selected question: '{question.question}' with answers: '{', '.join(question.answers)}' and current enablement status: '{question.is_active}'"
+    )
+
+    options = [
+        f"Change question '{question.question}' enablement status to '{enablement_status_to_change}'",
+        "Go Back To The Main Menu ↵",
+    ]
+    terminal_menu = TerminalMenu(
+        options,
+        title="\nℹ️ Use ↓ or ↑ arrow keys to navigate and 'Enter' to select the question type you want to add:\n",
+        menu_cursor_style=("fg_green", "bold"),
+    )
+    menu_entry_index = terminal_menu.show()
+    selected_type = options[menu_entry_index]
+
+    clear_screen()
+    if selected_type == options[0]:
+        Question.update_enablement_status(is_enabled, question_id)
+    elif selected_type == options[1]:
+        return
 
 
 def main():
