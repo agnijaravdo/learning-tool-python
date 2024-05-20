@@ -1,5 +1,5 @@
-import csv
 from enum import Enum
+import random
 from simple_term_menu import TerminalMenu
 from tabulate import tabulate
 from questions import Question, QuestionType
@@ -131,12 +131,70 @@ def show_question_enablement_menu():
 
     clear_screen()
     if selected_type == options[0]:
-        Question.update_enablement_status(is_enabled, question_id)
+        Question.update_row_value_based_on_question_id(
+            question_id, "is_active", not is_enabled
+        )
     elif selected_type == options[1]:
         return
 
+
 def start_practice_mode():
-    print("show practice mode")
+
+    while True:
+        questions = Question.get_all_questions()
+        random_question = get_weighted_random_question(questions)
+
+        times_shown = int(random_question.times_shown)
+        correct_answers_percent = random_question.correct_answers_percent
+
+        if times_shown > 0:
+            current_correct_count = (correct_answers_percent / 100) * times_shown
+        else:
+            current_correct_count = 0
+
+        if random_question.question_type == QuestionType.QUIZ:
+            practice_answer = input(
+                f"{random_question.question} Possible answers to choose: {random_question.answers}: "
+            )
+
+            if practice_answer == random_question.correct_answer:
+                print("Correct!")
+                current_correct_count += 1
+            else:
+                print("Incorrect!")
+
+        elif random_question.question_type == QuestionType.OPEN:
+            practice_answer = input(f"{random_question.question} ")
+
+            if practice_answer == random_question.correct_answer:
+                print("Correct!")
+                current_correct_count += 1
+            else:
+                print("Incorrect!")
+
+        times_shown += 1
+
+        correct_answers_percent = (current_correct_count / times_shown) * 100
+
+        Question.update_row_value_based_on_question_id(
+            random_question.id, "times_shown", times_shown
+        )
+        Question.update_row_value_based_on_question_id(
+            random_question.id, "correct_answers_percent", correct_answers_percent
+        )
+
+
+def get_weighted_random_question(questions):
+    enabled_questions = [question for question in questions if question.is_active]
+
+    weight = [
+        100.00 - (question.correct_answers_percent) for question in enabled_questions
+    ]
+    random_question = random.choices(
+        enabled_questions, weights=weight, k=len(enabled_questions)
+    )[0]
+    return random_question
+
 
 def main():
     show_starting_menu()

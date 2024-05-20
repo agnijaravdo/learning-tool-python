@@ -21,7 +21,7 @@ class Question:
         correct_answer: str,
         is_active: bool = True,
         times_shown: int = 0,
-        correct_answers_percent: int = 0,
+        correct_answers_percent: float = 0.00,
     ):
         self.question_type = question_type
         self.question = question
@@ -60,7 +60,9 @@ class Question:
     @correct_answer.setter
     def correct_answer(self, correct_answer: str):
         if correct_answer not in self.answers:
-            raise ValueError("Correct answer option should be among all possible answers")
+            raise ValueError(
+                "Correct answer option should be among all possible answers"
+            )
         self._correct_answer = correct_answer
 
     @staticmethod
@@ -88,7 +90,9 @@ class Question:
                         "A quiz question requires minimum of 2 answers. Add more answers"
                     )
                     continue
-                correct_answer = input(f"Enter which one of answers {answers} is the correct one: ")
+                correct_answer = input(
+                    f"Enter which one of answers {answers} is the correct one: "
+                )
 
             elif question_type == QuestionType.OPEN:
                 open_question_answer = input("Enter the answer: ")
@@ -136,9 +140,9 @@ class Question:
                         "question": question.question,
                         "answers": question.answers,
                         "correct_answer": question.correct_answer,
-                        "is_active": question.is_active,
+                        "is_active": str(question.is_active),
                         "times_shown": question.times_shown,
-                        "correct_answers_percent": question.correct_answers_percent,
+                        "correct_answers_percent": f"{question.correct_answers_percent:.2f}",
                     }
                 )
 
@@ -153,9 +157,9 @@ class Question:
                     question=row["question"],
                     answers=eval(row["answers"]),
                     correct_answer=row["correct_answer"],
-                    is_active=row["is_active"],
+                    is_active=row["is_active"].lower() == "true",
                     times_shown=int(row["times_shown"]),
-                    correct_answers_percent=int(row["correct_answers_percent"]),
+                    correct_answers_percent=float(row["correct_answers_percent"]),
                 )
                 question.id = int(row["id"])
                 questions.append(question)
@@ -180,11 +184,11 @@ class Question:
                         correct_answer=row["correct_answer"],
                         is_active=row["is_active"],
                         times_shown=int(row["times_shown"]),
-                        correct_answers_percent=int(row["correct_answers_percent"]),
+                        correct_answers_percent=float(row["correct_answers_percent"]),
                     )
 
     @staticmethod
-    def update_enablement_status(enablement_status, question_id):
+    def update_row_value_based_on_question_id(question_id, column_name, row_new_value):
         temp_rows = []
 
         with open(Question.QUESTIONS_DATA_PATH, "r") as file:
@@ -194,7 +198,14 @@ class Question:
 
         for row in temp_rows:
             if int(row["id"]) == int(question_id):
-                row["is_active"] = "False" if enablement_status else "True"
+                if column_name == "is_active":
+                    row[column_name] = str(row_new_value)
+                else:
+                    row[column_name] = (
+                        f"{row_new_value:.2f}"
+                        if isinstance(row_new_value, float)
+                        else str(row_new_value)
+                    )
 
         with open(Question.QUESTIONS_DATA_PATH, "w") as file:
             writer = csv.DictWriter(file, fieldnames=temp_rows[0].keys())
@@ -202,5 +213,5 @@ class Question:
             writer.writerows(temp_rows)
 
         print(
-            f"Question with id {question_id} has been successfully {'disabled' if enablement_status else 'enabled'}"
+            f"Question with id {question_id} has been successfully updated. Changed: on row with id:{question_id} column:{column_name} into --> {row_new_value}"
         )
