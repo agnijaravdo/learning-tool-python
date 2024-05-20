@@ -139,49 +139,57 @@ def show_question_enablement_menu():
 
 
 def start_practice_mode():
-
+    print("---------- Welcome to practice mode. Press 'Ctrl + C' to exit ----------")
     while True:
-        questions = Question.get_all_questions()
-        random_question = get_weighted_random_question(questions)
+        try:
+            questions = Question.get_all_questions()
+            random_question = get_weighted_random_question(questions)
 
-        times_shown = int(random_question.times_shown)
-        correct_answers_percent = random_question.correct_answers_percent
+            times_shown = int(random_question.times_shown)
+            correct_answers_percent = random_question.correct_answers_percent
 
-        if times_shown > 0:
-            current_correct_count = (correct_answers_percent / 100) * times_shown
-        else:
-            current_correct_count = 0
+            if times_shown > 0:
+                current_correct_count = (correct_answers_percent / 100) * times_shown
+            else:
+                current_correct_count = 0
 
-        if random_question.question_type == QuestionType.QUIZ:
-            practice_answer = input(
-                f"{random_question.question} Possible answers to choose: {random_question.answers}: "
+            if random_question.question_type == QuestionType.QUIZ:
+                options = random_question.answers
+                terminal_menu = TerminalMenu(
+                    options,
+                    title=f"\n{random_question.question}\n",
+                    menu_cursor_style=("fg_green", "bold"),
+                )
+                menu_entry_index = terminal_menu.show()
+                practice_answer = options[menu_entry_index]
+                if practice_answer == random_question.correct_answer:
+                    print("Correct!")
+                    current_correct_count += 1
+                else:
+                    print("Incorrect!")
+
+            elif random_question.question_type == QuestionType.OPEN:
+                practice_answer = input(f"{random_question.question} ")
+
+                if practice_answer == random_question.correct_answer:
+                    print("Correct!")
+                    current_correct_count += 1
+                else:
+                    print("Incorrect!")
+
+            times_shown += 1
+
+            correct_answers_percent = (current_correct_count / times_shown) * 100
+
+            Question.update_row_value_based_on_question_id(
+                random_question.id, "times_shown", times_shown
             )
-
-            if practice_answer == random_question.correct_answer:
-                print("Correct!")
-                current_correct_count += 1
-            else:
-                print("Incorrect!")
-
-        elif random_question.question_type == QuestionType.OPEN:
-            practice_answer = input(f"{random_question.question} ")
-
-            if practice_answer == random_question.correct_answer:
-                print("Correct!")
-                current_correct_count += 1
-            else:
-                print("Incorrect!")
-
-        times_shown += 1
-
-        correct_answers_percent = (current_correct_count / times_shown) * 100
-
-        Question.update_row_value_based_on_question_id(
-            random_question.id, "times_shown", times_shown
-        )
-        Question.update_row_value_based_on_question_id(
-            random_question.id, "correct_answers_percent", correct_answers_percent
-        )
+            Question.update_row_value_based_on_question_id(
+                random_question.id, "correct_answers_percent", correct_answers_percent
+            )
+        except KeyboardInterrupt:
+            clear_screen()
+            return
 
 
 def get_weighted_random_question(questions):
