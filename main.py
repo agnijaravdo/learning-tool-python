@@ -39,7 +39,7 @@ def show_starting_menu():
                     f"\n❗ To select '{StartMenuItem.PRACTICE_MODE.value}' you need to have minimum of 5 questions. Current count of questions is {questions_count}"
                 )
             else:
-                print("opening practice mode")
+                start_practice_mode()
         elif selected_mode == StartMenuItem.TEST_MODE:
             questions_count = Question.get_number_of_questions()
             if questions_count < 5:
@@ -81,9 +81,10 @@ def show_statistics():
             question.question_type.value,
             question.question,
             ", ".join(map(str, question.answers)),
+            question.correct_answer,
             question.is_active,
             question.times_shown,
-            question.correct_answers,
+            question.correct_answers_percent,
         ]
         table.append(row)
 
@@ -92,16 +93,17 @@ def show_statistics():
         "Type",
         "Question",
         "Answers",
+        "Correct One",
         "Is Active",
         "Times Shown",
-        "Correct Answers",
+        "Correctly answered %",
     ]
     print(
         tabulate(
             table,
             headers=headers,
             tablefmt="grid",
-            maxcolwidths=[None, None, 80, 60, None, None, None],
+            maxcolwidths=[None, None, 40, 40, None, None, None, None],
         )
     )
 
@@ -133,6 +135,8 @@ def show_question_enablement_menu():
     elif selected_type == options[1]:
         return
 
+def start_practice_mode():
+    print("show practice mode")
 
 def main():
     show_starting_menu()

@@ -18,16 +18,18 @@ class Question:
         question_type: QuestionType,
         question: str,
         answers: Iterable[str],
+        correct_answer: str,
         is_active: bool = True,
         times_shown: int = 0,
-        correct_answers: int = 0,
+        correct_answers_percent: int = 0,
     ):
         self.question_type = question_type
         self.question = question
         self.answers = answers
+        self.correct_answer = correct_answer
         self.is_active = is_active
         self.times_shown = times_shown
-        self.correct_answers = correct_answers
+        self.correct_answers_percent = correct_answers_percent
 
     @property
     def question_type(self):
@@ -50,6 +52,16 @@ class Question:
         if self.question_type == QuestionType.QUIZ and len(answers) < 2:
             raise ValueError("For quiz questions, there must be at least 2 answers")
         self._answers = answers
+
+    @property
+    def correct_answer(self):
+        return self._correct_answer
+
+    @correct_answer.setter
+    def correct_answer(self, correct_answer: str):
+        if correct_answer not in self.answers:
+            raise ValueError("Correct answer option should be among all possible answers")
+        self._correct_answer = correct_answer
 
     @staticmethod
     def add_question(question_type: QuestionType):
@@ -76,11 +88,14 @@ class Question:
                         "A quiz question requires minimum of 2 answers. Add more answers"
                     )
                     continue
+                correct_answer = input(f"Enter which one of answers {answers} is the correct one: ")
+
             elif question_type == QuestionType.OPEN:
                 open_question_answer = input("Enter the answer: ")
+                correct_answer = open_question_answer
                 answers.append(open_question_answer)
 
-            question = Question(question_type, user_question, answers)
+            question = Question(question_type, user_question, answers, correct_answer)
             questions.append(question)
         Question.write_questions_to_file(questions)
 
@@ -103,9 +118,10 @@ class Question:
                 "question_type",
                 "question",
                 "answers",
+                "correct_answer",
                 "is_active",
                 "times_shown",
-                "correct_answers",
+                "correct_answers_percent",
             ]
             writer = csv.DictWriter(file, fieldnames=header)
 
@@ -119,9 +135,10 @@ class Question:
                         "question_type": question.question_type.value,
                         "question": question.question,
                         "answers": question.answers,
+                        "correct_answer": question.correct_answer,
                         "is_active": question.is_active,
                         "times_shown": question.times_shown,
-                        "correct_answers": question.correct_answers,
+                        "correct_answers_percent": question.correct_answers_percent,
                     }
                 )
 
@@ -135,9 +152,10 @@ class Question:
                     question_type=QuestionType(row["question_type"]),
                     question=row["question"],
                     answers=eval(row["answers"]),
+                    correct_answer=row["correct_answer"],
                     is_active=row["is_active"],
                     times_shown=int(row["times_shown"]),
-                    correct_answers=int(row["correct_answers"]),
+                    correct_answers_percent=int(row["correct_answers_percent"]),
                 )
                 question.id = int(row["id"])
                 questions.append(question)
@@ -159,9 +177,10 @@ class Question:
                         question_type=QuestionType(row["question_type"]),
                         question=row["question"],
                         answers=eval(row["answers"]),
+                        correct_answer=row["correct_answer"],
                         is_active=row["is_active"],
                         times_shown=int(row["times_shown"]),
-                        correct_answers=int(row["correct_answers"]),
+                        correct_answers_percent=int(row["correct_answers_percent"]),
                     )
 
     @staticmethod
