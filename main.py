@@ -5,6 +5,8 @@ from tabulate import tabulate
 from questions import Question, QuestionType
 import os
 
+from score import Score
+
 
 class StartMenuItem(Enum):
     ADD_QUESTIONS = "Add Questions"
@@ -47,7 +49,7 @@ def show_starting_menu():
                     f"\n❗ To select '{StartMenuItem.TEST_MODE.value}' you need to have minimum of 5 questions. Current count of questions is {questions_count}"
                 )
             else:
-                print("opening test mode")
+                open_test_mode()
 
 
 def show_select_question_type_menu():
@@ -139,7 +141,7 @@ def show_question_enablement_menu():
 
 
 def start_practice_mode():
-    print("---------- Welcome to practice mode. Press 'Ctrl + C' to exit ----------")
+    print("---------- Welcome to practice mode. Press 'Ctrl + C' to exit ----------\n")
     while True:
         try:
             questions = Question.get_all_questions()
@@ -161,7 +163,13 @@ def start_practice_mode():
                     menu_cursor_style=("fg_green", "bold"),
                 )
                 menu_entry_index = terminal_menu.show()
+
+                # to handle exiting on unanswered quiz question
+                if menu_entry_index is None:
+                    return
+    
                 practice_answer = options[menu_entry_index]
+
                 if practice_answer == random_question.correct_answer:
                     print("Correct!")
                     current_correct_count += 1
@@ -203,6 +211,100 @@ def get_weighted_random_question(questions):
     )[0]
     return random_question
 
+def open_test_mode():
+    possible_number_of_questions = Question.get_number_of_questions()
+    while True:
+
+        questions_count = input("How many questions do you want to appear in the test? ")
+
+        if not questions_count.isdigit():
+            print("Enter a valid number")
+            continue
+        elif int(questions_count) > possible_number_of_questions:
+            print(
+                f"Provided number of questions is greater than the number of available questions. Available questions count is: {possible_number_of_questions}"
+            )
+            continue
+        elif int(questions_count) < 5:
+            print("Test mode requires minimum of 5 questions")
+            continue
+        else:
+            break 
+    
+    try:
+        possible_questions = Question.get_all_questions()
+        enabled_questions = [question for question in possible_questions if question.is_active]
+        sampled_questions = random.sample(enabled_questions, int(questions_count))
+    except ValueError:
+        print("Not enough questions to sample")
+        return
+    
+    start_test_mode(questions_count, sampled_questions)
+
+
+def start_test_mode(questions_count, sampled_questions):
+    print("\n---------- Welcome to test mode. Press 'Ctrl + C' to exit ----------\n")
+
+    user_score = 0
+
+    try:
+        question_index = 1
+        for question in sampled_questions:
+
+            times_shown = int(question.times_shown)
+            correct_answers_percent = question.correct_answers_percent
+
+            if times_shown > 0:
+                current_correct_count = (correct_answers_percent / 100) * times_shown
+            else:
+                current_correct_count = 0
+
+            if question.question_type == QuestionType.QUIZ:
+                options = question.answers
+                terminal_menu = TerminalMenu(
+                    options,
+                    title=f"\n{question_index}. {question.question}\n",
+                    menu_cursor_style=("fg_green", "bold"),
+                )
+                menu_entry_index = terminal_menu.show()
+
+                # to handle exiting on unanswered quiz question
+                if menu_entry_index is None:
+                    return
+
+                test_answer = options[menu_entry_index]
+            elif question.question_type == QuestionType.OPEN:
+                test_answer = input(f"{question_index}. {question.question} : ")
+            if test_answer == question.correct_answer:
+                print("Correct!")
+                current_correct_count += 1
+                user_score += 1
+                question_index += 1
+            else:
+                print("Incorrect!")
+                question_index += 1
+
+            times_shown += 1
+            correct_answers_percent = (current_correct_count / times_shown) * 100
+
+            Question.update_row_value_based_on_question_id(
+                question.id, "times_shown", times_shown
+            )
+            Question.update_row_value_based_on_question_id(
+                question.id, "correct_answers_percent", correct_answers_percent
+            )
+
+    except KeyboardInterrupt:
+        clear_screen()
+        return
+        
+    score_percentage = f"{(float(user_score)/float(questions_count) * 100):.2f}%"
+    print(f"Your score is {score_percentage}")
+    user_name = input("Enter your name to save score: ")
+    score = Score(user_name, score_percentage)
+    score.save_score_to_file(score)
+
+    
 
 def main():
     show_starting_menu()
