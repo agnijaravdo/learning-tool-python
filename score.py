@@ -15,8 +15,3 @@ class Score:
     def save_score_to_file(score):
         with open("data/results.txt", "a", newline="") as file:
             file.write(str(score))
-
-    @staticmethod
-    def get_scores_from_file():
-        with open("data/results.txt", "r") as file:
-            return file.readlines()

@@ -146,75 +146,15 @@ def start_practice_mode():
         try:
             questions = Question.get_all_questions()
             random_question = get_weighted_random_question(questions)
-
-            times_shown = int(random_question.times_shown)
-            correct_answers_percent = random_question.correct_answers_percent
-
-            if times_shown > 0:
-                current_correct_count = (correct_answers_percent / 100) * times_shown
-            else:
-                current_correct_count = 0
-
-            if random_question.question_type == QuestionType.QUIZ:
-                options = random_question.answers
-                terminal_menu = TerminalMenu(
-                    options,
-                    title=f"\n{random_question.question}\n",
-                    menu_cursor_style=("fg_green", "bold"),
-                )
-                menu_entry_index = terminal_menu.show()
-
-                # to handle exiting on unanswered quiz question
-                if menu_entry_index is None:
-                    return
-    
-                practice_answer = options[menu_entry_index]
-
-                if practice_answer == random_question.correct_answer:
-                    print("Correct!")
-                    current_correct_count += 1
-                else:
-                    print("Incorrect!")
-
-            elif random_question.question_type == QuestionType.OPEN:
-                practice_answer = input(f"{random_question.question} ")
-
-                if practice_answer == random_question.correct_answer:
-                    print("Correct!")
-                    current_correct_count += 1
-                else:
-                    print("Incorrect!")
-
-            times_shown += 1
-
-            correct_answers_percent = (current_correct_count / times_shown) * 100
-
-            Question.update_row_value_based_on_question_id(
-                random_question.id, "times_shown", times_shown
-            )
-            Question.update_row_value_based_on_question_id(
-                random_question.id, "correct_answers_percent", correct_answers_percent
-            )
+            ask_question(random_question)
         except KeyboardInterrupt:
             clear_screen()
             return
 
 
-def get_weighted_random_question(questions):
-    enabled_questions = [question for question in questions if question.is_active]
-
-    weight = [
-        100.00 - (question.correct_answers_percent) for question in enabled_questions
-    ]
-    random_question = random.choices(
-        enabled_questions, weights=weight, k=len(enabled_questions)
-    )[0]
-    return random_question
-
 def open_test_mode():
     possible_number_of_questions = Question.get_number_of_questions()
     while True:
-
         questions_count = input("How many questions do you want to appear in the test? ")
 
         if not questions_count.isdigit():
@@ -230,7 +170,7 @@ def open_test_mode():
             continue
         else:
             break 
-    
+
     try:
         possible_questions = Question.get_all_questions()
         enabled_questions = [question for question in possible_questions if question.is_active]
@@ -239,72 +179,84 @@ def open_test_mode():
         print("Not enough questions to sample")
         return
     
-    start_test_mode(questions_count, sampled_questions)
+    start_test_mode(int(questions_count), sampled_questions)
 
 
 def start_test_mode(questions_count, sampled_questions):
     print("\n---------- Welcome to test mode. Press 'Ctrl + C' to exit ----------\n")
-
     user_score = 0
 
     try:
-        question_index = 1
-        for question in sampled_questions:
-
-            times_shown = int(question.times_shown)
-            correct_answers_percent = question.correct_answers_percent
-
-            if times_shown > 0:
-                current_correct_count = (correct_answers_percent / 100) * times_shown
-            else:
-                current_correct_count = 0
-
-            if question.question_type == QuestionType.QUIZ:
-                options = question.answers
-                terminal_menu = TerminalMenu(
-                    options,
-                    title=f"\n{question_index}. {question.question}\n",
-                    menu_cursor_style=("fg_green", "bold"),
-                )
-                menu_entry_index = terminal_menu.show()
-
-                # to handle exiting on unanswered quiz question
-                if menu_entry_index is None:
-                    return
-
-                test_answer = options[menu_entry_index]
-            elif question.question_type == QuestionType.OPEN:
-                test_answer = input(f"{question_index}. {question.question} : ")
-            if test_answer == question.correct_answer:
-                print("Correct!")
-                current_correct_count += 1
+        for question_index, question in enumerate(sampled_questions, start=1):
+            print(f"{question_index}.", end=" ")
+            if ask_question(question) == question.correct_answer:
                 user_score += 1
-                question_index += 1
-            else:
-                print("Incorrect!")
-                question_index += 1
-
-            times_shown += 1
-            correct_answers_percent = (current_correct_count / times_shown) * 100
-
-            Question.update_row_value_based_on_question_id(
-                question.id, "times_shown", times_shown
-            )
-            Question.update_row_value_based_on_question_id(
-                question.id, "correct_answers_percent", correct_answers_percent
-            )
+                
+        score_percentage = f"{(float(user_score) / questions_count * 100):.2f}%"
+        print(f"Your score is {score_percentage}")
+        user_name = input("Enter your name to save score: ")
+        score = Score(user_name, score_percentage)
+        score.save_score_to_file(score)
 
     except KeyboardInterrupt:
         clear_screen()
         return
-        
-    score_percentage = f"{(float(user_score)/float(questions_count) * 100):.2f}%"
-    print(f"Your score is {score_percentage}")
-    user_name = input("Enter your name to save score: ")
-    score = Score(user_name, score_percentage)
-    score.save_score_to_file(score)
 
+
+def ask_question(question):
+    times_shown = int(question.times_shown)
+    correct_answers_percent = question.correct_answers_percent
+
+    if times_shown > 0:
+        current_correct_count = (correct_answers_percent / 100) * times_shown
+    else:
+        current_correct_count = 0
+
+    if question.question_type == QuestionType.QUIZ:
+        options = question.answers
+        terminal_menu = TerminalMenu(
+            options,
+            title=f"\n{question.question}\n",
+            menu_cursor_style=("fg_green", "bold"),
+        )
+        menu_entry_index = terminal_menu.show()
+
+        if menu_entry_index is None:
+            return
+
+        user_answer = options[menu_entry_index]
+    elif question.question_type == QuestionType.OPEN:
+        user_answer = input(f"{question.question} ")
+
+    times_shown += 1
+    if user_answer == question.correct_answer:
+        print("Correct!")
+        current_correct_count += 1
+    else:
+        print("Incorrect!")
+
+    correct_answers_percent = (current_correct_count / times_shown) * 100
+    update_question_statistics_data(question, times_shown, correct_answers_percent)
     
+    return user_answer
+
+
+def update_question_statistics_data(question, times_shown, correct_answers_percent):
+    Question.update_row_value_based_on_question_id(question.id, "times_shown", times_shown)
+    Question.update_row_value_based_on_question_id(question.id, "correct_answers_percent", correct_answers_percent)
+
+
+def get_weighted_random_question(questions):
+    enabled_questions = [question for question in questions if question.is_active]
+
+    weight = [
+        100.00 - (question.correct_answers_percent) for question in enabled_questions
+    ]
+    random_question = random.choices(
+        enabled_questions, weights=weight, k=len(enabled_questions)
+    )[0]
+    return random_question
+
 
 def main():
     show_starting_menu()
