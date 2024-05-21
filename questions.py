@@ -1,6 +1,4 @@
-import csv
 from enum import Enum
-import os
 from typing import Iterable
 
 
@@ -11,8 +9,6 @@ class QuestionType(Enum):
 
 
 class Question:
-    QUESTIONS_DATA_PATH = "data/questions.csv"
-
     def __init__(
         self,
         question_type: QuestionType,
@@ -66,7 +62,7 @@ class Question:
         self._correct_answer = correct_answer
 
     @staticmethod
-    def add_question(question_type: QuestionType):
+    def add_questions(question_type: QuestionType):
         questions = []
         while True:
             user_question = input(
@@ -87,11 +83,11 @@ class Question:
 
                 if len(answers) < 2:
                     print(
-                        "A quiz question requires minimum of 2 answers. Add more answers"
+                        "A quiz question requires a minimum of 2 answers. Add more answers"
                     )
                     continue
                 correct_answer = input(
-                    f"Enter which one of answers {answers} is the correct one: "
+                    f"Enter which one of the answers {answers} is the correct one: "
                 )
 
             elif question_type == QuestionType.OPEN:
@@ -101,117 +97,4 @@ class Question:
 
             question = Question(question_type, user_question, answers, correct_answer)
             questions.append(question)
-        Question.write_questions_to_file(questions)
-
-    @staticmethod
-    def write_questions_to_file(questions):
-        is_file_exists = os.path.isfile(Question.QUESTIONS_DATA_PATH)
-
-        max_id = 0
-        if is_file_exists:
-            with open(Question.QUESTIONS_DATA_PATH, "r") as file:
-                reader = csv.DictReader(file)
-                for row in reader:
-                    row_id = int(row["id"])
-                    if row_id > max_id:
-                        max_id = row_id
-
-        with open(Question.QUESTIONS_DATA_PATH, "a") as file:
-            header = [
-                "id",
-                "question_type",
-                "question",
-                "answers",
-                "correct_answer",
-                "is_active",
-                "times_shown",
-                "correct_answers_percent",
-            ]
-            writer = csv.DictWriter(file, fieldnames=header)
-
-            if not is_file_exists:
-                writer.writeheader()
-
-            for i, question in enumerate(questions, start=1):
-                writer.writerow(
-                    {
-                        "id": max_id + i,
-                        "question_type": question.question_type.value,
-                        "question": question.question,
-                        "answers": question.answers,
-                        "correct_answer": question.correct_answer,
-                        "is_active": str(question.is_active),
-                        "times_shown": question.times_shown,
-                        "correct_answers_percent": f"{question.correct_answers_percent:.2f}",
-                    }
-                )
-
-    @staticmethod
-    def get_all_questions():
-        questions = []
-        with open(Question.QUESTIONS_DATA_PATH, "r") as file:
-            reader = csv.DictReader(file)
-            for row in reader:
-                question = Question(
-                    question_type=QuestionType(row["question_type"]),
-                    question=row["question"],
-                    answers=eval(row["answers"]),
-                    correct_answer=row["correct_answer"],
-                    is_active=row["is_active"].lower() == "true",
-                    times_shown=int(row["times_shown"]),
-                    correct_answers_percent=float(row["correct_answers_percent"]),
-                )
-                question.id = int(row["id"])
-                questions.append(question)
         return questions
-
-    @staticmethod
-    def get_number_of_questions():
-        questions = Question.get_all_questions()
-        questions_count = len(questions)
-        return questions_count
-
-    @staticmethod
-    def get_question_by_id(question_id):
-        with open(Question.QUESTIONS_DATA_PATH, "r") as file:
-            reader = csv.DictReader(file)
-            for row in reader:
-                if row["id"] == str(question_id):
-                    return Question(
-                        question_type=QuestionType(row["question_type"]),
-                        question=row["question"],
-                        answers=eval(row["answers"]),
-                        correct_answer=row["correct_answer"],
-                        is_active=row["is_active"],
-                        times_shown=int(row["times_shown"]),
-                        correct_answers_percent=float(row["correct_answers_percent"]),
-                    )
-
-    @staticmethod
-    def update_row_value_based_on_question_id(question_id, column_name, row_new_value):
-        temp_rows = []
-
-        with open(Question.QUESTIONS_DATA_PATH, "r") as file:
-            reader = csv.DictReader(file)
-            for row in reader:
-                temp_rows.append(row)
-
-        for row in temp_rows:
-            if int(row["id"]) == int(question_id):
-                if column_name == "is_active":
-                    row[column_name] = str(row_new_value)
-                else:
-                    row[column_name] = (
-                        f"{row_new_value:.2f}"
-                        if isinstance(row_new_value, float)
-                        else str(row_new_value)
-                    )
-
-        with open(Question.QUESTIONS_DATA_PATH, "w") as file:
-            writer = csv.DictWriter(file, fieldnames=temp_rows[0].keys())
-            writer.writeheader()
-            writer.writerows(temp_rows)
-
-        print(
-            f"Question with id {question_id} has been successfully updated. Changed: on row with id:{question_id} column:{column_name} into --> {row_new_value}"
-        )
