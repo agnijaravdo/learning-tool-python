@@ -26,27 +26,25 @@ def show_mode_selection_menu():
         )
         menu_entry_index = terminal_menu.show()
         selected_mode = StartMenuItem(options[menu_entry_index])
+        questions_count = get_number_of_questions()
 
         clear_screen()
         if selected_mode == StartMenuItem.ADD_QUESTIONS:
             show_select_question_type_menu()
         if selected_mode == StartMenuItem.VIEW_STATISTICS:
-            show_statistics()
+            validate_questions_count(questions_count, selected_mode, 1, show_statistics)
         if selected_mode == StartMenuItem.DISABLE_ENABLE_QUESTIONS:
             show_question_enablement_menu()
         elif selected_mode == StartMenuItem.PRACTICE_MODE:
-            questions_count = get_number_of_questions()
-            if questions_count < 5:
-                print(
-                    f"\n❗ To select '{StartMenuItem.PRACTICE_MODE.value}' you need to have minimum of 5 questions. Current count of questions is {questions_count}"
-                )
-            else:
-                start_practice_mode()
+            validate_questions_count(questions_count, selected_mode, 5, start_practice_mode)
         elif selected_mode == StartMenuItem.TEST_MODE:
-            questions_count = get_number_of_questions()
-            if questions_count < 5:
-                print(
-                    f"\n❗ To select '{StartMenuItem.TEST_MODE.value}' you need to have minimum of 5 questions. Current count of questions is {questions_count}"
-                )
-            else:
-                open_test_mode()
+            validate_questions_count(questions_count, selected_mode, 5, open_test_mode)
+
+
+def validate_questions_count(questions_count, selected_mode, min_questions, function_name):
+    if questions_count < min_questions:
+        print(
+            f"\n❗ To select '{selected_mode.value}' you need to have minimum of {min_questions} questions. Current count of questions is {questions_count}"
+        )
+    else:
+        function_name()

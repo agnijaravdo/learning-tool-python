@@ -78,7 +78,7 @@ def write_questions_to_file(questions):
         ]
         writer = csv.DictWriter(file, fieldnames=header)
 
-        if not is_file_exists:
+        if not is_file_exists or os.path.getsize(QUESTIONS_DATA_PATH) == 0:
             writer.writeheader()
 
         for i, question in enumerate(questions, start=1):
