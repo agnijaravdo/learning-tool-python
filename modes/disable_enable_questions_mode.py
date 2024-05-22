@@ -1,5 +1,4 @@
 from simple_term_menu import TerminalMenu
-from questions import Question
 from utils import (
     clear_screen,
     get_question_by_id,
