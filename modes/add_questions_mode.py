@@ -12,6 +12,10 @@ def show_select_question_type_menu():
             menu_cursor_style=("fg_green", "bold"),
         )
         menu_entry_index = terminal_menu.show()
+
+        if menu_entry_index == None:
+            return
+
         selected_type = QuestionType(options[menu_entry_index])
 
         if selected_type == QuestionType.BACK:

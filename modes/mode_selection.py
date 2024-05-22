@@ -25,6 +25,10 @@ def show_mode_selection_menu():
             menu_cursor_style=("fg_green", "bold"),
         )
         menu_entry_index = terminal_menu.show()
+
+        if menu_entry_index == None:
+            return
+
         selected_mode = StartMenuItem(options[menu_entry_index])
         questions_count = get_number_of_questions()
 
@@ -34,14 +38,20 @@ def show_mode_selection_menu():
         if selected_mode == StartMenuItem.VIEW_STATISTICS:
             validate_questions_count(questions_count, selected_mode, 1, show_statistics)
         if selected_mode == StartMenuItem.DISABLE_ENABLE_QUESTIONS:
-            show_question_enablement_menu()
+            validate_questions_count(
+                questions_count, selected_mode, 1, show_question_enablement_menu
+            )
         elif selected_mode == StartMenuItem.PRACTICE_MODE:
-            validate_questions_count(questions_count, selected_mode, 5, start_practice_mode)
+            validate_questions_count(
+                questions_count, selected_mode, 5, start_practice_mode
+            )
         elif selected_mode == StartMenuItem.TEST_MODE:
             validate_questions_count(questions_count, selected_mode, 5, open_test_mode)
 
 
-def validate_questions_count(questions_count, selected_mode, min_questions, function_name):
+def validate_questions_count(
+    questions_count, selected_mode, min_questions, function_name
+):
     if questions_count < min_questions:
         print(
             f"\n❗ To select '{selected_mode.value}' you need to have minimum of {min_questions} questions. Current count of questions is {questions_count}"

@@ -8,7 +8,17 @@ from utils import (
 
 
 def show_question_enablement_menu():
-    question_id = input("Type question id to change its enablement: ")
+    while True:
+        question_id = input("Type question id to change its enablement: ")
+        if not question_id.isdigit():
+            print("❗ Enter a valid question id")
+            continue
+        elif not get_question_by_id(int(question_id)):
+            print("❗ Question with provided id does not exist")
+            continue
+        else:
+            break
+
     question = get_question_by_id(question_id)
     is_enabled = question.is_active.lower() == "true"
     enablement_status_to_change = "DISABLED" if is_enabled else "ENABLED"
@@ -26,6 +36,10 @@ def show_question_enablement_menu():
         menu_cursor_style=("fg_green", "bold"),
     )
     menu_entry_index = terminal_menu.show()
+
+    if menu_entry_index == None:
+        return
+
     selected_type = options[menu_entry_index]
 
     clear_screen()

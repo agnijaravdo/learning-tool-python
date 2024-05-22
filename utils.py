@@ -26,7 +26,7 @@ def ask_question(question):
         )
         menu_entry_index = terminal_menu.show()
 
-        if menu_entry_index is None:
+        if menu_entry_index == None:
             return
 
         user_answer = options[menu_entry_index]

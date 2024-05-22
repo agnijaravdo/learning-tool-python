@@ -31,7 +31,9 @@ def open_test_mode():
         ]
         sampled_questions = random.sample(enabled_questions, int(questions_count))
     except ValueError:
-        print("Not enough questions to sample")
+        print(
+            f"Not enough questions to sample. Possible sample count is {len(enabled_questions)}"
+        )
         return
 
     start_test_mode(int(questions_count), sampled_questions)
